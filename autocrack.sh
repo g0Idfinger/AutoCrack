@@ -41,7 +41,10 @@ while [ "$POTFILE" != "$POTFILE2" ]; do
 	# creates new wordlist
 	if [ "$POTFILE" != "$POTFILE2" ]; then
 		cat $POT | cut -d : -f2 > $WORKDIR/$NTDSDIR/$NTDSDIR-pass2.txt
-		tr '[:upper:]' '[:lower:]' < $WORKDIR/$NTDSDIR/$NTDSDIR-pass2.txt >> $WORKDIR/$NTDSDIR/$NTDSDIR-pass.txt
+		tr '[:upper:]' '[:lower:]' < $WORKDIR/$NTDSDIR/$NTDSDIR-pass2.txt >> $WORKDIR/$NTDSDIR/$NTDSDIR-pass3.txt
+		rm $WORKDIR/$NTDSDIR/$NTDSDIR-pass2.txt
+		python munge.py -l 9 -i $WORKDIR/$NTDSDIR/NTDSDIR-pass3.txt -o $WORKDIR/$NTDSDIR/NTDSDIR-pass.txt
+		rm $WORKDIR/$NTDSDIR/$NTDSDIR-pass3.txt
 	fi
 done
 # Cracks passwords from RockYou 2021 wordlist Edit path to your wordlist
@@ -60,5 +63,7 @@ while [ "$POTFILE" != "$POTFILE2" ]; do
 		tr '[:upper:]' '[:lower:]' < $WORKDIR/$NTDSDIR/$NTDSDIR-pass2.txt >> $WORKDIR/$NTDSDIR/$NTDSDIR-pass3.txt
 		rm $WORKDIR/$NTDSDIR/$NTDSDIR-pass2.txt
 		python munge.py -l 9 -i $WORKDIR/$NTDSDIR/NTDSDIR-pass3.txt -o $WORKDIR/$NTDSDIR/NTDSDIR-pass.txt
+		rm $WORKDIR/$NTDSDIR/$NTDSDIR-pass3.txt
 	fi
 done
+rm rm $WORKDIR/$NTDSDIR/*.txt 
