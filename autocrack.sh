@@ -117,7 +117,7 @@ while [ "$POTFILE" != "$POTFILE2" ]; do
 done
 # Cracks passwords from RockYou 2021 wordlist Edit path to your wordlist
 POTCOUNT=$(wc -l < $POT)
-hashcat -d1 -O -w4 -m 1000 -a 0 $WORKDIR/hashes.ntds $WORDLIST -r $RULE --session RockYou21
+hashcat -d1 -O -w4 -m 1000 -a 0 $WORKDIR/hashes.ntds $WORDLIST -r $RULE --session WordList
 POTFILE="1"
 ENDPHASE="1"
 
