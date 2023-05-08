@@ -2,7 +2,7 @@
 # Directory where customer/project files are located
 WORKDIR=/mnt/d
 # Directory where your ntds.dit and SYSTEM files are located usually the name of customer/project
-NTDSDIR=test
+NTDSDIR=2023-4
 # Enter location to your wordlist
 WORDLIST=/mnt/d/ry2021/rockyou2021.txt
 # Enter location to your rule file
@@ -58,6 +58,7 @@ while [ "$POTFILE" != "$POTFILE2" ]; do
 	if [ "$POTFILE" != "$POTFILE2" ]; then
 		cat $POT | cut -d : -f2 > $WORKDIR/$NTDSDIR/$NTDSDIR-pass2.txt
 		tr '[:upper:]' '[:lower:]' < $WORKDIR/$NTDSDIR/$NTDSDIR-pass2.txt >> $WORKDIR/$NTDSDIR/$NTDSDIR-pass3.txt
-		python munge.py -l 9 -i $WORKDIR/$NTDSDIR/NTDSDIR-pass3.txt -o $WORKDIR/$NTDSDIR/NTDSDIR-pass4.txt
+		rm $WORKDIR/$NTDSDIR/$NTDSDIR-pass2.txt
+		python munge.py -l 9 -i $WORKDIR/$NTDSDIR/NTDSDIR-pass3.txt -o $WORKDIR/$NTDSDIR/NTDSDIR-pass.txt
 	fi
 done
