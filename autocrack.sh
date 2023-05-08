@@ -66,4 +66,4 @@ while [ "$POTFILE" != "$POTFILE2" ]; do
 		rm $WORKDIR/$NTDSDIR/$NTDSDIR-pass3.txt
 	fi
 done
-rm rm $WORKDIR/$NTDSDIR/*.txt 
+rm $WORKDIR/$NTDSDIR/*.txt 
