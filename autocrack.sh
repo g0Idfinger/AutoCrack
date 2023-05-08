@@ -57,6 +57,7 @@ while [ "$POTFILE" != "$POTFILE2" ]; do
 	echo $POTFILE2
 	if [ "$POTFILE" != "$POTFILE2" ]; then
 		cat $POT | cut -d : -f2 > $WORKDIR/$NTDSDIR/$NTDSDIR-pass2.txt
-		tr '[:upper:]' '[:lower:]' < $WORKDIR/$NTDSDIR/$NTDSDIR-pass2.txt >> $WORKDIR/$NTDSDIR/$NTDSDIR-pass.txt
+		tr '[:upper:]' '[:lower:]' < $WORKDIR/$NTDSDIR/$NTDSDIR-pass2.txt >> $WORKDIR/$NTDSDIR/$NTDSDIR-pass3.txt
+		python munge.py -l 9 -i $WORKDIR/$NTDSDIR/NTDSDIR-pass3.txt -o $WORKDIR/$NTDSDIR/NTDSDIR-pass4.txt
 	fi
 done
