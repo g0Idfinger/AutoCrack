@@ -64,7 +64,7 @@ if p_used=false; then
 	# Location to your potfile
 	POT=~/.local/share/hashcat/hashcat.potfile
 fi
-
+POTCOUNT=$(wc -l < $POT)
 # Ensures files stay in working directory
 cd $WORKDIR
 # Dumps the hashes from ntds.dit
@@ -72,7 +72,8 @@ impacket-secretsdump -system $WORKDIR/SYSTEM  -ntds $WORKDIR/ntds.dit LOCAL -out
 # Cracks LM passwords first
 hashcat -m 3000 -a 3 $WORKDIR/hashes.ntds -1 ?a ?1?1?1?1?1?1?1 --increment --session LM
 # Dumps cracked hashes to text (combines the 2 LM hashes for the full uppercase passwords
-hashcat -m 3000 $WORKDIR/hashes.ntds --show | sort -u | tee pass.txt
+echo "Putting crack LM passwords into wordlist"
+hashcat -m 3000 $WORKDIR/hashes.ntds --show | sort -u > pass.txt
 # Coverts uppercase passwords to actually case sentivie passwords
 python3 $dir/main.py -lp pass.txt -nd $WORKDIR/hashes.ntds > $WORKDIR/userpass.txt
 # Grabs just the passwords to use as a wordlist for additional cracking
@@ -81,52 +82,65 @@ cat $WORKDIR/userpass.txt | cut -d : -f2 > $WORKDIR/passwords.txt
 cat $WORKDIR/hashes.ntds.cleartext | cut -d : -f3 >> $WORKDIR/passwords.txt
 # Ensures wordlist has no duplicate words
 cat $WORKDIR/passwords.txt | sort | uniq -u > $WORKDIR/pass.txt
+# cracks passwords using generated wordlist above and uses the combined rule.
+hashcat -d1 -O -w4 -m 1000 -a 0 $WORKDIR/hashes.ntds $WORKDIR/pass.txt -r $RULE --session NTLM
 # Sets var for loop
-POTFILE2="0"
+POTFILE="1"
+NTLM=1
 # Cracks passwords with generated wordlists from LM cracking and cleartext passwords.  Will keep looping
 # until it no longer cracks additional passwords.
 while [ "$POTFILE" != "$POTFILE2" ]; do
+	POTFILE2="0"
 	# checks size of potfile to determine if new passwords were cracked
+	# checks potfile for new lines
 	POTFILE=$(wc -l < $POT)
+	COUNT=$((POTFILE-POTCOUNT))
 	# creates new wordlist
 	if [ "$POTFILE" != "$POTFILE2" ]; then
 		echo "Generating Next Word list to try"
-		cat $POT | cut -d : -f2 > $WORKDIR/pass2.txt
-		echo "Converting wordlist to lowercase"
-		tr '[:upper:]' '[:lower:]' < $WORKDIR/pass2.txt > $WORKDIR/pass3.txt
-		rm $WORKDIR/pass2.txt
-		echo "runing munge, this may take a while"
-		python $dir/munge.py -l 9 -i $WORKDIR/pass3.txt -o $WORKDIR/pass.txt
-		rm $WORKDIR/pass3.txt
-	fi
-	# cracks passwords using generated wordlist above and uses the combined rule.
-	hashcat -d1 -O -w4 -m 1000 -a 0 $WORKDIR/hashes.ntds $WORKDIR/pass.txt -r $RULE --session NTLM
-	# checks potfile for new lines
-	POTFILE2=$(wc -l < $POT)
-	echo $POTFILE
-	echo $POTFILE2
-done
-# Cracks passwords from RockYou 2021 wordlist Edit path to your wordlist
-hashcat -d1 -O -w4 -m 1000 -a 0 $WORKDIR/hashes.ntds $WORDLIST -r $RULE --session RockYou21
-#POTFILE="1"
-#POTFILE2="0"
-cat $POT | cut -d : -f2 > $WORKDIR/pass.txt
-while [ "$POTFILE" != "$POTFILE2" ]; do
-	POTFILE=$(wc -l < $POT)
-
-
-	if [ "$POTFILE" != "$POTFILE2" ]; then
-		echo "Generating Next Word list to try"
-		cat $POT | cut -d : -f2 > $WORKDIR/pass2.txt
+		tail -n $COUNT $POT | cut -d : -f2 > $WORKDIR/pass2.txt
 		echo "Converting wordlist to lowercase"
 		tr '[:upper:]' '[:lower:]' < $WORKDIR/pass2.txt > $WORKDIR/pass3.txt
 		#rm $WORKDIR/pass2.txt
 		echo "runing munge, this may take a while"
 		python $dir/munge.py -l 9 -i $WORKDIR/pass3.txt -o $WORKDIR/pass.txt
 		#rm $WORKDIR/pass3.txt
+		POTCOUNT=$(wc -l < $POT)
 	fi
-	hashcat -d1 -O -w4 -m 1000 -a 0 $WORKDIR/hashes.ntds $WORKDIR/pass.txt -r $RULE --session EndPhase
+	# cracks passwords using generated wordlist above and uses the combined rule.
+	hashcat -d1 -O -w4 -m 1000 -a 0 $WORKDIR/hashes.ntds $WORKDIR/pass.txt -r $RULE --session NTLM-$NTLM
+	NTLM=$((NTLM+1))
 	POTFILE2=$(wc -l < $POT)
+
+	echo $POTFILE
+	echo $POTFILE2
+done
+# Cracks passwords from RockYou 2021 wordlist Edit path to your wordlist
+POTCOUNT=$(wc -l < $POT)
+hashcat -d1 -O -w4 -m 1000 -a 0 $WORKDIR/hashes.ntds $WORDLIST -r $RULE --session RockYou21
+POTFILE="1"
+ENDPHASE="1"
+
+while [ "$POTFILE" != "$POTFILE2" ]; do
+	POTFILE2="0"
+	POTFILE=$(wc -l < $POT)
+	COUNT=$((POTFILE-POTCOUNT))
+	if [ "$POTFILE" != "$POTFILE2" ]; then
+		echo "Generating Next Word list to try"
+		tail -n $COUNT $POT | cut -d : -f2 > $WORKDIR/pass2.txt
+		echo "Converting wordlist to lowercase"
+		tr '[:upper:]' '[:lower:]' < $WORKDIR/pass2.txt > $WORKDIR/pass3.txt
+		#rm $WORKDIR/pass2.txt
+		echo "runing munge, this may take a while"
+		python $dir/munge.py -l 9 -i $WORKDIR/pass3.txt -o $WORKDIR/pass.txt
+		#rm $WORKDIR/pass3.txt
+		POTCOUNT=$(wc -l < $POT)
+	fi
+	# cracks passwords using generated wordlist above and uses the combined rule.
+	hashcat -d1 -O -w4 -m 1000 -a 0 $WORKDIR/hashes.ntds $WORKDIR/pass.txt -r $RULE --session EndPhase-$ENDPHASE
+	NTLM=$((NTLM+1))
+	POTFILE2=$(wc -l < $POT)
+
 	echo $POTFILE
 	echo $POTFILE2
 done
